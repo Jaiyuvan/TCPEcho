@@ -22,12 +22,20 @@ int main(){
     if (server_fd==-1){
         perror("Server socket creation failed");
     }
+
     struct sockaddr_in serverAddr;
     serverAddr.sin_family=AF_INET;
     serverAddr.sin_port=htons(port);
     serverAddr.sin_addr.s_addr=INADDR_ANY;
+    int opt = 1;
 
-    if(bind(server_fd,(struct sockaddr*)&serverAddr,sizeof(sockaddr))<0){
+     if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR,&opt, sizeof(opt)) < 0) {
+	    perror("setsockopt failed");
+	    close(server_fd);
+	    return 1;
+	}
+
+    if(bind(server_fd,(struct sockaddr*)&serverAddr,sizeof(serverAddr))<0){
         perror("Server Socket Binding failed");
     }
 
@@ -36,7 +44,7 @@ int main(){
         close(server_fd);
         return 1;
     }
-    
+    std::cout<<"Lisitening on port 8080"<<"\n";
     std::vector<pollfd> fds;
     fds.push_back({server_fd,POLLIN,0});
 
@@ -77,7 +85,7 @@ int main(){
                     --current_size;
                 }
                 else{
-                    send(fds[i].fd,buffer,bufferSize,0);
+                    send(fds[i].fd,buffer,bytes_read,0);
 
                 }
             }
@@ -86,5 +94,4 @@ int main(){
     for (const auto& pfd:fds){
         close(pfd.fd);
     }
-    
 }
