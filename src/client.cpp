@@ -28,7 +28,6 @@ int main() {
         return 1;
     }
 
-    // FIX 1: connect returns 0 on success, < 0 on error
     if (connect(serverConnection, (struct sockaddr*)&severAddress, sizeof(severAddress)) < 0) {
         std::cout << "Server connection failed\n";
         close(serverConnection);
