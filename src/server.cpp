@@ -22,6 +22,10 @@ int main(){
     if (server_fd==-1){
         perror("Server socket creation failed");
     }
+    int opt = 1;
+    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+        perror("setsockopt SO_REUSEADDR failed");
+    }
     struct sockaddr_in serverAddr;
     serverAddr.sin_family=AF_INET;
     serverAddr.sin_port=htons(port);
@@ -77,7 +81,7 @@ int main(){
                     --current_size;
                 }
                 else{
-                    send(fds[i].fd,buffer,bufferSize,0);
+                    send(fds[i].fd,buffer,bytes_read,0);
 
                 }
             }
@@ -86,5 +90,4 @@ int main(){
     for (const auto& pfd:fds){
         close(pfd.fd);
     }
-    
 }
