@@ -7,16 +7,32 @@
 #include<netinet/in.h>
 #include<poll.h>
 #include<vector>
-
+#include<csignal>
+#include<cstring>
 
 constexpr int port=8080;
 constexpr int bufferSize=1024;
+volatile sig_atomic_t keepRun=1;
+void signalHandler(int sig){
+    if (sig==SIGINT || sig==SIGTERM){
+    keepRun=0;
+    }
+}
 
 void nonBlocking(int fd){
     int flags=fcntl(fd,F_GETFL,0);
     fcntl(fd,F_SETFL,flags | O_NONBLOCK);
 }
 int main(){
+
+    struct sigaction sa;
+    std::memset(&sa,0,sizeof(sa));
+    sa.sa_handler=signalHandler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags=0;
+    if (sigaction(SIGINT,&sa,nullptr)<0 || sigaction(SIGTERM,&sa,nullptr)<0){
+        std::cout<<"Error in sigaction\n";
+    }
 
     int server_fd=socket(AF_INET,SOCK_STREAM,0);
     if (server_fd==-1){
@@ -45,9 +61,13 @@ int main(){
     fds.push_back({server_fd,POLLIN,0});
 
 
-    while (true){
+    while (keepRun){
         int poll_count=poll(fds.data(),fds.size(),-1);
         if (poll_count<0){
+            if (errno==EINTR){
+                if (!keepRun) break;
+                continue;
+            }
             std::cerr<<"Poll error";
             break;
         }
